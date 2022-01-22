@@ -1,7 +1,9 @@
 from django.core.paginator import Paginator
-from django.shortcuts import render, get_object_or_404
-from .models import Post, Group, User
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Post, Group, User
+from .forms import PostForm
+
 
 SORT_POST = 10
 
@@ -21,7 +23,6 @@ def group_posts(request, slug):
     template = 'posts/group_list.html'
     group = get_object_or_404(Group, slug=slug)
     posts = Post.objects.select_related('group').filter(group=group)
-
     paginator = Paginator(posts, SORT_POST)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -50,10 +51,39 @@ def profile(request, username):
 
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    post_list = Post.objects.all()
+    post_list = Post.objects
     context = {
          'post_id': post_id,
          'post': post,
          'post_list': post_list,
     }
     return render(request, 'posts/post_detail.html', context)
+
+
+@login_required
+def post_create(request):
+    template = 'posts/create_post.html'
+    if request.method == 'POST':
+        form = PostForm(request.POST)
+        if form.is_valid():
+            form = form.save(commit=False)
+            form.author = request.user
+            form.save()
+            return redirect(f'/profile/{request.user}')
+        else:
+            return render(request, template, {'form': form})
+    form = PostForm()
+    return render(request, template, {'form': form})
+
+
+@login_required
+def post_edit(request, post_id):
+    template_name = 'posts/create_post.html'
+    post = get_object_or_404(Post, id=post_id)
+    form = PostForm(request.POST or None, instance=post)
+    if post.author == request.user:
+        if form.is_valid():
+            post = form.save()
+        else:
+            return render(request, template_name, {'form': form, 'is_edit': True}) 
+    return redirect('posts:post_detail', post_id)
