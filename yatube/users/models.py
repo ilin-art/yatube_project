@@ -6,4 +6,4 @@ class Contact(models.Model):
     email = models.EmailField()
     subject = models.CharField(max_length=100)
     body = models.TextField()
-    is_answered = models.BooleanField(default=False) 
+    is_answered = models.BooleanField(default=False)

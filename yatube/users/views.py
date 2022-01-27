@@ -1,12 +1,13 @@
 from django.views.generic import CreateView
 from django.urls import reverse_lazy
-from .forms import CreationForm
+from .forms import CreationForm, ContactForm
+from django.shortcuts import render
 
 
 class SignUp(CreateView):
     form_class = CreationForm
     success_url = reverse_lazy('posts:main')
-    template_name = 'users/signup.html' 
+    template_name = 'users/signup.html'
 
 
 def user_contact(request):
