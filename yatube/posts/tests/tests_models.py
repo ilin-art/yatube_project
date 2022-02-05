@@ -13,13 +13,13 @@ class PostModelTest(TestCase):
         cls.user = User.objects.create_user(username='auth')
         cls.group = Group.objects.create(
             title='Тестовая группа',
-            slug='Тестовый слаг',
+            slug='test-slug',
             description='Тестовое описание',
         )
         cls.post = Post.objects.create(
             author=cls.user,
             text='Тестовая группа',
-            group=cls.group
+            group=cls.group,
         )
 
     def test_models_have_correct_object_names(self):

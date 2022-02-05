@@ -12,7 +12,9 @@ class PostURLTest(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user_author = User.objects.create_user(username='user_author')
-        cls.user_nonauthor = User.objects.create_user(username='user_nonauthor')
+        cls.user_nonauthor = User.objects.create_user(
+            username='user_nonauthor'
+        )
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test-slug',
@@ -46,7 +48,7 @@ class PostURLTest(TestCase):
         for url in urls:
             with self.subTest(url=url):
                 response = self.post_author.get(url)
-                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.reason_phrase, 'OK')
 
     def test_urls_for_nonauthorized_user(self):
         """Страницы доступны любому пользователю."""
@@ -59,7 +61,7 @@ class PostURLTest(TestCase):
         for url in urls:
             with self.subTest(url=url):
                 response = self.unauthorized_user.get(url)
-                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.reason_phrase, 'OK')
 
     def test_urls_for_authorized_user(self):
         """Страницы доступны авторизованному пользователю."""
@@ -73,34 +75,37 @@ class PostURLTest(TestCase):
         for url in urls:
             with self.subTest(url=url):
                 response = self.authorized_user.get(url)
-                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.reason_phrase, 'OK')
 
     def test_unexisting_page_authorized(self):
-        """Несуществующая страница не отображается для авторизованного ползователя."""
+        """Несуществующая страница не отображается для авторизованного
+        ползователя."""
         response = self.authorized_user.get('/unexisting_page/')
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.reason_phrase, 'Not Found')
 
     def test_unexisting_page_nonauthorized(self):
         """Несуществующая страница не отображается для любого ползователя."""
         response = self.unauthorized_user.get('/unexisting_page/')
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.reason_phrase, 'Not Found')
 
     def test_unexisting_page_post_author(self):
-        """Несуществующая страница не отображается для авторизованного автора."""
+        """Несуществующая страница не отображается для авторизованного
+        автора."""
         response = self.post_author.get('/unexisting_page/')
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.reason_phrase, 'Not Found')
 
-    # ------------Проверяем редиректы для неавторизованного пользователя------------
+    # ---Проверяем редиректы для неавторизованного пользователя---
 
     def test_post_edit_url_redirect_anonymous(self):
-        """Страница /posts/<post_id>/edit перенаправляет анонимного пользователя."""
+        """Страница /posts/<post_id>/edit перенаправляет анонимного
+        пользователя."""
         response = self.unauthorized_user.get(f'/posts/{self.post.id}/edit/')
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.reason_phrase, 'Found')
 
     def test_post_create_url_redirect_anonymous(self):
         """Страница /posts/create/ перенаправляет анонимного пользователя. """
         response = self.unauthorized_user.get('/create/')
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.reason_phrase, 'Found')
 
     # ------------Проверка вызываемых HTML-шаблонов------------
 
