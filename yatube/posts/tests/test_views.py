@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.conf import settings
 from django import forms
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.cache import cache
 
 import tempfile
 import shutil
@@ -29,7 +30,7 @@ class PostViewsTests(TestCase):
             slug='test-slug',
             description='Тестовое описание',
         )
-        small_gif = (            
+        small_gif = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
             b'\x01\x00\x80\x00\x00\x00\x00\x00'
             b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
@@ -53,7 +54,7 @@ class PostViewsTests(TestCase):
             slug='test-slug-2',
             description='Тестовое описание 2',
         )
-        small_gif_2 = (            
+        small_gif_2 = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
             b'\x01\x00\x80\x00\x00\x00\x00\x00'
             b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
@@ -188,6 +189,7 @@ class PostViewsTests(TestCase):
         self.response_group_2 = self.authorized_user.get(
             reverse('posts:group', kwargs={'slug': 'test-slug-2'})
         )
+        cache.clear()
 
     # Проверяем используемые шаблоны
     def test_pages_uses_correct_template(self):
@@ -279,17 +281,20 @@ class PostViewsTests(TestCase):
             self.response_group_2.context['page_obj']
         )
 
-    # def test_post_detail_page_shows_correct_context(self):
-    #     """Шаблон post_detail сформирован с правильным контекстом."""
-    #     post = PostViewsTests.post
-    #     response = self.unauthorized_user.get(
-    #         reverse('posts:post_detail', kwargs={'post_id': post.id})
-    #     )
-    #     self.assertEqual(response.context['post'].text, 'Тестовый пост')
-    #     self.assertEqual(response.context['post'].id, post.id)
-    #     self.assertEqual(response.context['post'].group, post.group)
-    #     self.assertEqual(response.context['post'].author, post.author)
-    #     self.assertEqual(response.context['post'].image, post.image)
+    def test_cache_index_correct_context(self):
+        response = self.unauthorized_user.get(reverse('posts:main'))
+        content = response.content
+        context = response.context['page_obj']
+        self.assertIn(self.post, context)
+        post = Post.objects.get(id=self.post.id)
+        post.delete()
+        second_response = self.unauthorized_user.get(reverse('posts:main'))
+        second_content = second_response.content
+        self.assertEqual(content, second_content)
+        cache.clear()
+        second_response = self.unauthorized_user.get(reverse('posts:main'))
+        second_content = second_response.content
+        self.assertNotEqual(content, second_content)
 
 
 class PostPaginatorTests(TestCase):

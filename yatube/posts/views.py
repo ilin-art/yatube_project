@@ -1,9 +1,12 @@
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Post, Group, User
-from .forms import PostForm
+
+from .models import Post, Group, Follow, User
+from .forms import PostForm, CommentForm
+
 from yatube.settings import POSTS_PER_PAGE
+
 
 
 def index(request):
@@ -48,12 +51,13 @@ def profile(request, username):
 
 
 def post_detail(request, post_id):
+    form = CommentForm(request.POST or None)
     post = get_object_or_404(Post, id=post_id)
-    post_list = Post.objects.all()
+    comments = post.comments.all()
     context = {
-        'post_id': post_id,
         'post': post,
-        'post_list': post_list,
+        'form': form,
+        'comments': comments
     }
     return render(request, 'posts/post_detail.html', context)
 
@@ -91,3 +95,40 @@ def post_edit(request, post_id):
                       template_name,
                       {'form': form, 'is_edit': True})
     return redirect('posts:post_detail', post_id)
+
+
+@login_required
+def add_comment(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    form = CommentForm(request.POST or None)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.author = request.user
+        comment.post = post
+        comment.save()
+    return redirect('posts:post_detail', post_id=post_id)
+
+
+@login_required
+def follow_index(request):
+    # информация о текущем пользователе доступна в переменной request.user
+    # ...
+    context = {}
+    return render(request, 'posts/follow.html', context)
+
+@login_required
+def profile_follow(request, username):
+    # Подписаться на автора
+    author = get_object_or_404(User, username=username)
+    user = request.user
+    if (
+        author != user and not
+        Follow.objects.get(author=author, user=user).exists()
+    ):
+        Follow.objects.create(author=author, user=user)
+    return redirect('posts:profile', username)
+
+@login_required
+def profile_unfollow(request, username):
+    # Дизлайк, отписка
+    ...

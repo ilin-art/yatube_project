@@ -6,7 +6,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 import tempfile
 import shutil
 
-from .. models import Post, Group, User
+from .. models import Post, Group, Comment, User
+from .. forms import CommentForm
 
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -24,7 +25,7 @@ class PostFormTest(TestCase):
             slug='test-slug',
             description='Тестовое описание',
         )
-        small_gif = (            
+        small_gif = (
              b'\x47\x49\x46\x38\x39\x61\x02\x00'
              b'\x01\x00\x80\x00\x00\x00\x00\x00'
              b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
@@ -101,3 +102,62 @@ class PostFormTest(TestCase):
             'posts:post_detail', kwargs={'post_id': post.id})
         )
         self.assertEqual(post.text, 'Новый текст')
+
+
+class TestCommentForm(TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.user = User.objects.create_user(username="auth")
+        cls.post = Post.objects.create(
+            author=cls.user,
+            text='Текст',
+        )
+        cls.form = CommentForm()
+
+    def setUp(self):
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user)
+        self.guest_client = Client()
+
+    def test_add_comment(self):
+        """Валидная форма добавляет комментарий к выбранному посту."""
+        post = TestCommentForm.post
+        form_data = {
+            'text': 'Текст комментария',
+        }
+        response = self.authorized_client.post(
+            reverse('posts:add_comment', kwargs={'post_id': post.id}),
+            data=form_data,
+            follow=True
+        )
+        # Проверяем, сработал ли редирект
+        self.assertRedirects(response, reverse(
+            'posts:post_detail', kwargs={'post_id': post.id})
+        )
+        comment = Comment.objects.first()
+        # Проверяем, появился ли комментарий
+        self.assertEqual(comment.text, 'Текст комментария')
+        # Проверяем, появился ли комментарий в контексте шаблона post_detail
+        response = self.authorized_client.get(
+            reverse('posts:post_detail', kwargs={'post_id': post.id})
+        )
+        self.assertIn(comment, response.context.get('comments'))
+
+    def test_anonymous_cant_add_comment(self):
+        """Анонимный пользователь не может добавить комментарий."""
+        post = TestCommentForm.post
+        comments_count = Comment.objects.count()
+        form_data = {
+            'text': 'Текст гостя',
+        }
+        response = self.guest_client.post(
+            reverse('posts:add_comment', kwargs={'post_id': post.id}),
+            data=form_data,
+            follow=True
+        )
+        # Проверяем, что при попытке добавить комментарий
+        # кол-во комментариев остается прежним
+        self.assertEqual(Comment.objects.count(), comments_count)
+        # Проверяем, сработал ли редирект
+        self.assertRedirects(response, '/auth/login/?next=/posts/1/comment/')

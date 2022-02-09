@@ -31,27 +31,27 @@ class PostModelTest(TestCase):
     def test_post_text_help_text(self):
         """help_text поля post.text совпадает с ожидаемым."""
         post = PostModelTest.post
-        # Получаем из свойста класса Task значение verbose_name для title
+        # Получаем из свойста класса Post значение verbose_name для title
         help_text = post._meta.get_field('text').help_text
         self.assertEqual(help_text, 'Введите текст поста')
 
     def test_post_author_label(self):
         """verbose_name поля post.author совпадает с ожидаемым."""
         post = PostModelTest.post
-        # Получаем из свойста класса Task значение verbose_name для title
+        # Получаем из свойста класса Post значение verbose_name для title
         verbose = post._meta.get_field('author').verbose_name
         self.assertEqual(verbose, 'Автор')
 
     def test_post_group_help_text(self):
         """help_text поля post.group совпадает с ожидаемым."""
         post = PostModelTest.post
-        # Получаем из свойста класса Task значение verbose_name для title
+        # Получаем из свойста класса Post значение verbose_name для title
         help_text = post._meta.get_field('group').help_text
         self.assertEqual(help_text, 'Выберите группу')
 
     def test_post_group_label(self):
         """verbose_name поля post.group совпадает с ожидаемым."""
         post = PostModelTest.post
-        # Получаем из свойста класса Task значение verbose_name для title
+        # Получаем из свойста класса Post значение verbose_name для title
         verbose = post._meta.get_field('group').verbose_name
         self.assertEqual(verbose, 'Группа')
