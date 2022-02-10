@@ -1,10 +1,6 @@
 # posts/tests/tests_url.py
 from django.test import TestCase, Client
-from django.contrib.auth import get_user_model
-from ..models import Post, Group
-
-
-User = get_user_model()
+from ..models import Post, Group, User
 
 
 class PostURLTest(TestCase):
@@ -32,12 +28,7 @@ class PostURLTest(TestCase):
         self.post_author.force_login(self.user_author)
         self.authorized_user = Client()
         self.authorized_user.force_login(self.user_nonauthor)
-
-    # ------------Тесты доступности страниц------------
-
-    def test_urls_for_post_author(self):
-        """Страницы доступны авторизованному автору."""
-        urls = [
+        self.urls_for_post_author = [
             '/',
             '/group/test-slug/',
             '/profile/user_author/',
@@ -45,34 +36,45 @@ class PostURLTest(TestCase):
             '/create/',
             f'/posts/{self.post.id}/edit/',
         ]
-        for url in urls:
-            with self.subTest(url=url):
-                response = self.post_author.get(url)
-                self.assertEqual(response.reason_phrase, 'OK')
-
-    def test_urls_for_nonauthorized_user(self):
-        """Страницы доступны любому пользователю."""
-        urls = [
+        self.urls_for_nonauthorized_user = [
             '/',
             '/group/test-slug/',
             '/profile/user_author/',
             f'/posts/{self.post.id}/',
         ]
-        for url in urls:
-            with self.subTest(url=url):
-                response = self.unauthorized_user.get(url)
-                self.assertEqual(response.reason_phrase, 'OK')
-
-    def test_urls_for_authorized_user(self):
-        """Страницы доступны авторизованному пользователю."""
-        urls = [
+        self.urls_for_authorized_user = [
             '/',
             '/group/test-slug/',
             '/profile/user_author/',
             f'/posts/{self.post.id}/',
             '/create/',
         ]
-        for url in urls:
+        self.templates_url_names = {
+            '/': 'posts/index.html',
+            '/group/test-slug/': 'posts/group_list.html',
+            '/profile/user_author/': 'posts/profile.html',
+            f'/posts/{self.post.id}/': 'posts/post_detail.html',
+            f'/posts/{self.post.id}/edit/': 'posts/create_post.html',
+            '/create/': 'posts/create_post.html',
+        }
+
+    def test_urls_for_post_author(self):
+        """Страницы доступны авторизованному автору."""
+        for url in self.urls_for_post_author:
+            with self.subTest(url=url):
+                response = self.post_author.get(url)
+                self.assertEqual(response.reason_phrase, 'OK')
+
+    def test_urls_for_nonauthorized_user(self):
+        """Страницы доступны любому пользователю."""
+        for url in self.urls_for_nonauthorized_user:
+            with self.subTest(url=url):
+                response = self.unauthorized_user.get(url)
+                self.assertEqual(response.reason_phrase, 'OK')
+
+    def test_urls_for_authorized_user(self):
+        """Страницы доступны авторизованному пользователю."""
+        for url in self.urls_for_authorized_user:
             with self.subTest(url=url):
                 response = self.authorized_user.get(url)
                 self.assertEqual(response.reason_phrase, 'OK')
@@ -84,17 +86,11 @@ class PostURLTest(TestCase):
         self.assertEqual(response.reason_phrase, 'Not Found')
 
     def test_unexisting_page_nonauthorized(self):
-        """Несуществующая страница не отображается для любого ползователя."""
+        """Несуществующая страница не отображается для ползователя."""
         response = self.unauthorized_user.get('/unexisting_page/')
+        response = self.authorized_user.get('/unexisting_page/')
         self.assertEqual(response.reason_phrase, 'Not Found')
-
-    def test_unexisting_page_post_author(self):
-        """Несуществующая страница не отображается для авторизованного
-        автора."""
-        response = self.post_author.get('/unexisting_page/')
         self.assertEqual(response.reason_phrase, 'Not Found')
-
-    # ---Проверяем редиректы для неавторизованного пользователя---
 
     def test_post_edit_url_redirect_anonymous(self):
         """Страница /posts/<post_id>/edit перенаправляет анонимного
@@ -107,20 +103,10 @@ class PostURLTest(TestCase):
         response = self.unauthorized_user.get('/create/')
         self.assertEqual(response.reason_phrase, 'Found')
 
-    # ------------Проверка вызываемых HTML-шаблонов------------
-
     def test_urls_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
         # Шаблоны по адресам
-        templates_url_names = {
-            '/': 'posts/index.html',
-            '/group/test-slug/': 'posts/group_list.html',
-            '/profile/user_author/': 'posts/profile.html',
-            f'/posts/{self.post.id}/': 'posts/post_detail.html',
-            f'/posts/{self.post.id}/edit/': 'posts/create_post.html',
-            '/create/': 'posts/create_post.html',
-        }
-        for address, template in templates_url_names.items():
+        for address, template in self.templates_url_names.items():
             with self.subTest(address=address):
                 response = self.post_author.get(address)
                 self.assertTemplateUsed(response, template)

@@ -286,15 +286,15 @@ class PostViewsTests(TestCase):
         content = response.content
         context = response.context['page_obj']
         self.assertIn(self.post, context)
-        # post = Post.objects.get(id=self.post.id)
-        # post.delete()
-        # second_response = self.unauthorized_user.get(reverse('posts:main'))
-        # second_content = second_response.content
-        # self.assertEqual(content, second_content)
-        # cache.clear()
-        # second_response = self.unauthorized_user.get(reverse('posts:main'))
-        # second_content = second_response.content
-        # self.assertNotEqual(content, second_content)
+        post = Post.objects.get(id=self.post.id)
+        post.delete()
+        second_response = self.unauthorized_user.get(reverse('posts:main'))
+        second_content = second_response.content
+        self.assertEqual(content, second_content)
+        cache.clear()
+        second_response = self.unauthorized_user.get(reverse('posts:main'))
+        second_content = second_response.content
+        self.assertNotEqual(content, second_content)
 
 
 class PostPaginatorTests(TestCase):
