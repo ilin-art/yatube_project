@@ -8,7 +8,6 @@ from .forms import PostForm, CommentForm
 from yatube.settings import POSTS_PER_PAGE
 
 
-
 def index(request):
     posts = Post.objects.select_related('group')
     paginator = Paginator(posts, POSTS_PER_PAGE)
@@ -38,6 +37,16 @@ def group_posts(request, slug):
 def profile(request, username):
     # Здесь код запроса к модели и создание словаря контекста
     user = get_object_or_404(User, username=username)
+    if request.user.is_authenticated:
+        if (
+            user != request.user and
+            Follow.objects.filter(author=user, user=request.user).exists()
+        ):
+            following = True
+        else:
+            following = False
+    else:
+        following = False
     posts = user.posts.all()
     paginator = Paginator(posts, POSTS_PER_PAGE)
     page_number = request.GET.get('page')
@@ -46,6 +55,7 @@ def profile(request, username):
         'page_obj': page_obj,
         'author': user,
         'posts': posts,
+        'following': following,
     }
     return render(request, 'posts/profile.html', context)
 
@@ -111,24 +121,35 @@ def add_comment(request, post_id):
 
 @login_required
 def follow_index(request):
-    # информация о текущем пользователе доступна в переменной request.user
-    # ...
-    context = {}
+    """Страница с авторами на которых подписаны."""
+    follow_posts = Post.objects.filter(author__following__user=request.user)
+    paginator = Paginator(follow_posts, POSTS_PER_PAGE)
+    page_number = request.GET.get('page_obj')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+        'paginator': paginator,
+    }
     return render(request, 'posts/follow.html', context)
+
 
 @login_required
 def profile_follow(request, username):
-    # Подписаться на автора
+    """Делает подписку на автора."""
     author = get_object_or_404(User, username=username)
-    user = request.user
-    if (
-        author != user and not
-        Follow.objects.get(author=author, user=user).exists()
-    ):
-        Follow.objects.create(author=author, user=user)
+    follow = Follow.objects.filter(
+        user=request.user,
+        author=author)
+    if request.user != author and not follow.exists():
+        Follow.objects.create(user=request.user,
+                              author=author)
     return redirect('posts:profile', username)
+
 
 @login_required
 def profile_unfollow(request, username):
-    # Дизлайк, отписка
-    ...
+    """Делает отписку от автора."""
+    author = get_object_or_404(User, username=username)
+    user = request.user
+    Follow.objects.filter(author=author, user=user).delete()
+    return redirect('posts:profile', username)
