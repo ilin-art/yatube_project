@@ -8,7 +8,7 @@ from django.core.cache import cache
 import tempfile
 import shutil
 
-from ..models import Post, Group, User
+from ..models import Post, Group, Follow, User
 
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -261,6 +261,7 @@ class PostViewsTests(TestCase):
 
     def test_post_show_on_third_pages(self):
         """Проверяем что созданный пост появился на трех страницах"""
+        self.response_index_post_show = self.authorized_user.get("/")
         self.assertIn(
             Post.objects.get(id=1),
             self.response_index_post_show.context["page_obj"]
@@ -282,6 +283,7 @@ class PostViewsTests(TestCase):
         )
 
     def test_cache_index_correct_context(self):
+        '''Проверка работы кэширования'''
         response = self.unauthorized_user.get(reverse('posts:main'))
         content = response.content
         context = response.context['page_obj']
@@ -295,6 +297,39 @@ class PostViewsTests(TestCase):
         second_response = self.unauthorized_user.get(reverse('posts:main'))
         second_content = second_response.content
         self.assertNotEqual(content, second_content)
+
+    def test_auth_user_can_follow(self):
+        '''Авторизованный пользователь может подписываться на других
+        пользователей'''
+        response = self.authorized_user.get(
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': self.user_author}
+            )
+        )
+        self.assertRedirects(
+            response, reverse(
+                'posts:profile',
+                kwargs={'username': self.user_author}
+            )
+        )
+        self.assertEqual(Follow.objects.count(), 1)
+
+    def test_auth_user_can_unfollow(self):
+        '''Авторизованный пользователь может отменить подписку'''
+        response = self.authorized_user.get(
+            reverse(
+                'posts:profile_unfollow',
+                kwargs={'username': self.user_author}
+            )
+        )
+        self.assertRedirects(
+            response, reverse(
+                'posts:profile',
+                kwargs={'username': self.user_author}
+            )
+        )
+        self.assertEqual(Follow.objects.count(), 0)
 
 
 class PostPaginatorTests(TestCase):

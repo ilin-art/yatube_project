@@ -3,10 +3,12 @@ from .models import Post, Group, Comment
 
 
 class PostForm(forms.ModelForm):
-    group = forms.ModelChoiceField(queryset=Group.objects,
-                                   empty_label='---------',
-                                   required=False,
-                                   label='Группа')
+    group = forms.ModelChoiceField(
+        queryset=Group.objects,
+        empty_label='---------',
+        required=False,
+        label='Группа'
+    )
 
     class Meta:
         model = Post

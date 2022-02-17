@@ -1,4 +1,5 @@
 from django.test import TestCase, Client
+from http import HTTPStatus
 
 
 class AboutURLTests(TestCase):
@@ -11,10 +12,10 @@ class AboutURLTests(TestCase):
         # Отправляем запрос через client,
         # созданный в setUp()
         response = self.guest_client.get('/about/author/')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_tech_page(self):
         # Отправляем запрос через client,
         # созданный в setUp()
         response = self.guest_client.get('/about/tech/')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
