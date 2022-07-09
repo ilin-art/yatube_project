@@ -1,3 +1,9 @@
+# Yatube :tada:  
+[![Python](https://img.shields.io/badge/-Python-464646?style=flat-square&logo=Python)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/-Django-464646?style=flat-square&logo=Django)](https://www.djangoproject.com/)
+[![SQLite3](https://img.shields.io/badge/-SQLite3-464646?style=flat-square&logo=SQLite)](https://www.sqlite.org/)
+[![pytest](https://img.shields.io/badge/-pytest-464646?style=flat-square&logo=pytest)](https://docs.pytest.org/en/6.2.x/)
+
 Социальная сеть в которой реализована возможность для публикации личных дневников. Это сайт, на котором можно создать свою страницу. Если на нее зайти, то можно посмотреть все записи автора. Пользователи могут заходить на чужие страницы, подписываться на других авторов и комментировать их записи. Автор может выбрать имя и уникальный адрес для своей страницы. Записи можно отправить в группу и посмотреть в ней записи разных авторов.
 
 ## Для запуска проекта
